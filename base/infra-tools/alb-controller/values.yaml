@@ -10,7 +10,7 @@ serviceAccount:
   name: aws-load-balancer-controller
   annotations:
     # Run: terraform -chdir=infra/live/dev/platform output alb_controller_role_arn
-    eks.amazonaws.com/role-arn: "FILL_FROM_TERRAFORM_OUTPUT"
+    eks.amazonaws.com/role-arn: "arn:aws:iam::119778517587:role/openedx-dev-lb-controller"
 
 resources:
   requests:
