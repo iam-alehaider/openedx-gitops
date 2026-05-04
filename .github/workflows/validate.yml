@@ -1,0 +1,60 @@
+name: Validate Manifests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+          kustomize version
+
+      - name: Build dev manifests
+        run: |
+          echo "▶ Building dev..."
+          kustomize build environments/dev > /tmp/dev-manifests.yaml
+          echo "✅ Dev build successful"
+          wc -l /tmp/dev-manifests.yaml
+
+      - name: Build staging manifests
+        run: |
+          echo "▶ Building staging..."
+          kustomize build environments/staging > /tmp/staging-manifests.yaml
+          echo "✅ Staging build successful"
+
+      - name: Build prod manifests
+        run: |
+          echo "▶ Building prod..."
+          kustomize build environments/prod > /tmp/prod-manifests.yaml
+          echo "✅ Prod build successful"
+
+      - name: Check no unfilled placeholders exist
+        run: |
+          # Only check environments directory (base has intentional placeholders)
+          FOUND=false
+          for env in dev staging prod; do
+            if kustomize build environments/$env | grep -q "FILL_AFTER_TERRAFORM"; then
+              echo "⚠️  Warning: Unfilled placeholder in $env (expected during initial setup)"
+              FOUND=true
+            fi
+          done
+          # Do not fail — these placeholders are expected until Terraform applies
+          echo "Placeholder check complete"
+
+      - name: Diff what changed
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin main
+          echo "## Files changed:"
+          git diff --name-only origin/main

@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: openedx
+
+resources:
+  - ../../base/openedx
+
+images:
+  - name: openedx/lms
+    newName: 119778517587.dkr.ecr.us-east-1.amazonaws.com/openedx/lms
+    newTag: "stable" # lms
+  - name: openedx/cms
+    newName: 119778517587.dkr.ecr.us-east-1.amazonaws.com/openedx/cms
+    newTag: "stable" # cms
+
+commonLabels:
+  environment: prod
+
+patches:
+  - path: patches/replicas.yaml
+  - path: patches/ingress-lms.yaml
+  - path: patches/ingress-cms.yaml
+
+configMapGenerator:
+  - name: openedx-lms-config
+    namespace: openedx
+    behavior: merge
+    literals:
+      - LMS_HOST=learn.alecloud.site
+      - CMS_HOST=studio.alecloud.site
+      - MYSQL_HOST=FILL_AFTER_TERRAFORM_PROD_APPLY
+      - REDIS_HOST=FILL_AFTER_TERRAFORM_PROD_APPLY
+      - OPENEDX_LOG_LEVEL=WARNING
+  - name: openedx-cms-config
+    namespace: openedx
+    behavior: merge
+    literals:
+      - LMS_HOST=learn.alecloud.site
+      - CMS_HOST=studio.alecloud.site
+      - MYSQL_HOST=FILL_AFTER_TERRAFORM_PROD_APPLY
+      - REDIS_HOST=FILL_AFTER_TERRAFORM_PROD_APPLY

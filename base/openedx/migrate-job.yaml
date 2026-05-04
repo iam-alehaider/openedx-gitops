@@ -1,0 +1,82 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openedx-migrate
+  namespace: openedx
+  labels:
+    app: openedx-migrate
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app: openedx-migrate
+    spec:
+      serviceAccountName: openedx-sa
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: migrate
+          image: openedx/lms:latest
+          command:
+            - python
+            - manage.py
+            - migrate
+            - --noinput
+            - --settings=lms.envs.tutor.production
+
+          envFrom:
+            - configMapRef:
+                name: openedx-lms-config
+
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: password
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: host
+
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+
+          volumeMounts:
+            - name: secrets-store
+              mountPath: /mnt/secrets
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: openedx-aws-secrets
+        - name: tmp
+          emptyDir: {}

@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cms
+  namespace: openedx
+  labels:
+    app: cms
+    component: openedx
+spec:
+  selector:
+    matchLabels:
+      app: cms
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: cms
+        component: openedx
+    spec:
+      serviceAccountName: openedx-sa
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: cms
+          image: openedx/cms:latest
+          ports:
+            - containerPort: 8000
+              name: http
+
+          envFrom:
+            - configMapRef:
+                name: openedx-cms-config
+
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: password
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: host
+            - name: REDIS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-redis-secret
+                  key: REDIS_AUTH_TOKEN
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-django-secret
+                  key: secret-key
+
+          volumeMounts:
+            - name: secrets-store
+              mountPath: /mnt/secrets
+              readOnly: true
+            - name: media
+              mountPath: /openedx/media
+            - name: tmp
+              mountPath: /tmp
+
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1.5Gi"
+
+          livenessProbe:
+            httpGet:
+              path: /heartbeat
+              port: 8000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 10
+
+          readinessProbe:
+            httpGet:
+              path: /heartbeat
+              port: 8000
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            failureThreshold: 10
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: openedx-aws-secrets
+        - name: media
+          persistentVolumeClaim:
+            claimName: openedx-media-pvc
+        - name: tmp
+          emptyDir: {}

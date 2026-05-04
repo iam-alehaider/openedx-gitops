@@ -1,0 +1,21 @@
+# FILL THESE AFTER TERRAFORM APPLIES
+# Run: terraform -chdir=infra/live/dev/platform output cluster_name
+clusterName: openedx-dev
+region: us-east-1
+# Run: terraform -chdir=infra/live/dev/networking output vpc_id
+vpcId: vpc-0a16e536c5c2447a5
+
+serviceAccount:
+  create: true
+  name: aws-load-balancer-controller
+  annotations:
+    # Run: terraform -chdir=infra/live/dev/platform output alb_controller_role_arn
+    eks.amazonaws.com/role-arn: "FILL_FROM_TERRAFORM_OUTPUT"
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "200m"
+    memory: "256Mi"

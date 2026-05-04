@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openedx-lms-config
+  namespace: openedx
+data:
+  SERVICE_VARIANT:            "lms"
+  DJANGO_SETTINGS_MODULE:     "lms.envs.tutor.production"
+  UWSGI_WORKERS:              "4"
+  UWSGI_THREADS:              "2"
+  UWSGI_MAX_REQUESTS:         "1000"
+  OPENEDX_LOG_LEVEL:          "WARNING"
+  CELERY_BROKER_TRANSPORT:    "redis"
+  AWS_DEFAULT_REGION:         "us-east-1"
+  ENABLE_HTTPS:               "true"
+  SESSION_COOKIE_SECURE:      "true"
+  CSRF_COOKIE_SECURE:         "true"
+  # Override per environment via kustomize configMapGenerator
+  LMS_HOST: "learn.alecloud.site"
+  CMS_HOST: "studio.alecloud.site"
+  MYSQL_HOST: "FILL_FROM_TERRAFORM_OUTPUT"
+  REDIS_HOST: "FILL_FROM_TERRAFORM_OUTPUT"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openedx-cms-config
+  namespace: openedx
+data:
+  SERVICE_VARIANT:        "cms"
+  DJANGO_SETTINGS_MODULE: "cms.envs.tutor.production"
+  UWSGI_WORKERS:          "2"
+  UWSGI_THREADS:          "2"
+  UWSGI_MAX_REQUESTS:     "500"
+  OPENEDX_LOG_LEVEL:      "WARNING"
+  ENABLE_HTTPS:           "true"
+  SESSION_COOKIE_SECURE:  "true"
+  CSRF_COOKIE_SECURE:     "true"
+  LMS_HOST: "learn.alecloud.site"
+  CMS_HOST: "studio.alecloud.site"
+  MYSQL_HOST: "FILL_FROM_TERRAFORM_OUTPUT"
+  REDIS_HOST: "FILL_FROM_TERRAFORM_OUTPUT"

@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cms-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+spec:
+  tls:
+    - hosts:
+        - dev.studio.alecloud.site
+      secretName: cms-tls-dev
+  rules:
+    - host: dev.studio.alecloud.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cms
+                port:
+                  number: 8000

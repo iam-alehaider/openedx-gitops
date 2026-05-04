@@ -1,0 +1,31 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: "true"
+  iops: "3000"
+  throughput: "125"
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-shared
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap
+  # FILL THIS: terraform -chdir=infra/live/dev/platform output efs_file_system_id
+  fileSystemId: "FILL_FROM_TERRAFORM_OUTPUT"
+  directoryPerms: "700"
+  gidRangeStart: "1000"
+  gidRangeEnd:   "2000"
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true

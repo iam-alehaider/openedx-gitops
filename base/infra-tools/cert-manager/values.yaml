@@ -1,0 +1,21 @@
+installCRDs: true
+replicaCount: 2
+
+resources:
+  requests:
+    cpu: "50m"
+    memory: "128Mi"
+  limits:
+    cpu: "200m"
+    memory: "256Mi"
+
+global:
+  leaderElection:
+    namespace: cert-manager
+
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+    prometheusInstance: kube-prometheus
+    namespace: monitoring

@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: openedx
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - environment: dev
+            namespace: openedx-dev
+          - environment: staging
+            namespace: openedx-staging
+          - environment: prod
+            namespace: openedx
+
+  template:
+    metadata:
+      name: "openedx-{{ environment }}"
+      namespace: argocd
+    spec:
+      project: openedx
+      source:
+        repoURL: https://github.com/iam-alehaider/openedx-gitops
+        targetRevision: main
+        path: "environments/{{ environment }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ namespace }}"
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - PrunePropagationPolicy=foreground
+        retry:
+          limit: 3
+          backoff:
+            duration: "10s"
+            factor: 2
+            maxDuration: "5m"
+      # dev and staging auto-sync; prod is manual
+      # Override per environment in environment-specific ArgoCD app if needed
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+      revisionHistoryLimit: 10

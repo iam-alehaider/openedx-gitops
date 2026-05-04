@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cms-ingress
+spec:
+  tls:
+    - hosts:
+        - studio.alecloud.site
+      secretName: cms-tls-prod
+  rules:
+    - host: studio.alecloud.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cms
+                port:
+                  number: 8000

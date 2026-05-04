@@ -1,0 +1,38 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: lms-worker-scaledobject
+  namespace: openedx
+spec:
+  scaleTargetRef:
+    name: lms-worker
+  minReplicaCount: 1
+  maxReplicaCount: 20
+  pollingInterval: 15
+  cooldownPeriod: 60
+  triggers:
+    - type: redis
+      metadata:
+        addressFromEnv: CELERY_BROKER_URL
+        listName: lms.default
+        listLength: "10"
+      authenticationRef:
+        name: redis-auth
+    - type: redis
+      metadata:
+        addressFromEnv: CELERY_BROKER_URL
+        listName: lms.high
+        listLength: "5"
+      authenticationRef:
+        name: redis-auth
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: redis-auth
+  namespace: openedx
+spec:
+  secretTargetRef:
+    - parameter: password
+      name: openedx-redis-secret
+      key: REDIS_AUTH_TOKEN

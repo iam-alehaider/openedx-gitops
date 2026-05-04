@@ -1,0 +1,15 @@
+resources:
+  operator:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+prometheus:
+  operator:
+    enabled: true
+    podMonitor:
+      enabled: true
+      namespace: monitoring

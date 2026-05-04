@@ -1,0 +1,26 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: openedx-role
+  namespace: openedx
+rules:
+  - apiGroups: [""]
+    resources: [pods, configmaps, services]
+    verbs: [get, list, watch]
+  - apiGroups: [""]
+    resources: [pods/log]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openedx-rolebinding
+  namespace: openedx
+subjects:
+  - kind: ServiceAccount
+    name: openedx-sa
+    namespace: openedx
+roleRef:
+  kind: Role
+  name: openedx-role
+  apiGroup: rbac.authorization.k8s.io

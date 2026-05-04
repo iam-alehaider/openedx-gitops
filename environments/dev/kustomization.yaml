@@ -1,0 +1,44 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: openedx-dev
+
+resources:
+  - ../../base/openedx
+
+# CI pipeline updates only these image tags
+images:
+  - name: openedx/lms
+    newName: 119778517587.dkr.ecr.us-east-1.amazonaws.com/openedx/lms
+    newTag: "latest" # lms
+  - name: openedx/cms
+    newName: 119778517587.dkr.ecr.us-east-1.amazonaws.com/openedx/cms
+    newTag: "latest" # cms
+
+commonLabels:
+  environment: dev
+
+patches:
+  - path: patches/replicas.yaml
+  - path: patches/resources.yaml
+  - path: patches/ingress-lms.yaml
+  - path: patches/ingress-cms.yaml
+
+configMapGenerator:
+  - name: openedx-lms-config
+    namespace: openedx-dev
+    behavior: merge
+    literals:
+      - LMS_HOST=dev.learn.alecloud.site
+      - CMS_HOST=dev.studio.alecloud.site
+      - MYSQL_HOST=FILL_AFTER_TERRAFORM_APPLY
+      - REDIS_HOST=FILL_AFTER_TERRAFORM_APPLY
+      - OPENEDX_LOG_LEVEL=DEBUG
+  - name: openedx-cms-config
+    namespace: openedx-dev
+    behavior: merge
+    literals:
+      - LMS_HOST=dev.learn.alecloud.site
+      - CMS_HOST=dev.studio.alecloud.site
+      - MYSQL_HOST=FILL_AFTER_TERRAFORM_APPLY
+      - REDIS_HOST=FILL_AFTER_TERRAFORM_APPLY

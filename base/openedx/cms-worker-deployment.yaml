@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cms-worker
+  namespace: openedx
+  labels:
+    app: cms-worker
+    component: openedx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cms-worker
+  template:
+    metadata:
+      labels:
+        app: cms-worker
+        component: openedx
+    spec:
+      serviceAccountName: openedx-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: cms-worker
+          image: openedx/cms:latest
+          command:
+            - celery
+            - --app=cms.celery:APP
+            - worker
+            - --loglevel=warning
+            - --hostname=cms.%%h
+            - --max-tasks-per-child=100
+            - --queues=cms.default,cms.high
+
+          envFrom:
+            - configMapRef:
+                name: openedx-cms-config
+
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: password
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: host
+            - name: REDIS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-redis-secret
+                  key: REDIS_AUTH_TOKEN
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-django-secret
+                  key: secret-key
+
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+
+          volumeMounts:
+            - name: secrets-store
+              mountPath: /mnt/secrets
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: openedx-aws-secrets
+        - name: tmp
+          emptyDir: {}

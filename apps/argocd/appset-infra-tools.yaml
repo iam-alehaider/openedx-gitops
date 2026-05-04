@@ -1,0 +1,63 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infra-tools
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: cert-manager
+            namespace: cert-manager
+            chart: cert-manager
+            repoURL: https://charts.jetstack.io
+            targetRevision: "v1.14.4"
+            valuesFile: base/infra-tools/cert-manager/values.yaml
+
+          - name: ingress-nginx
+            namespace: ingress-nginx
+            chart: ingress-nginx
+            repoURL: https://kubernetes.github.io/ingress-nginx
+            targetRevision: "4.9.1"
+            valuesFile: base/infra-tools/ingress-nginx/values.yaml
+
+          - name: keda
+            namespace: keda
+            chart: keda
+            repoURL: https://kedacore.github.io/charts
+            targetRevision: "2.13.1"
+            valuesFile: base/infra-tools/keda/values.yaml
+
+          - name: aws-load-balancer-controller
+            namespace: kube-system
+            chart: aws-load-balancer-controller
+            repoURL: https://aws.github.io/eks-charts
+            targetRevision: "1.7.1"
+            valuesFile: base/infra-tools/alb-controller/values.yaml
+
+  template:
+    metadata:
+      name: "infra-{{ name }}"
+      namespace: argocd
+    spec:
+      project: openedx
+      sources:
+        - repoURL: https://github.com/iam-alehaider/openedx-gitops
+          targetRevision: main
+          ref: values
+        - repoURL: "{{ repoURL }}"
+          chart: "{{ chart }}"
+          targetRevision: "{{ targetRevision }}"
+          helm:
+            valueFiles:
+              - "$values/{{ valuesFile }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{ namespace }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

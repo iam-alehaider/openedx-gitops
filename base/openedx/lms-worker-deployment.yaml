@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lms-worker
+  namespace: openedx
+  labels:
+    app: lms-worker
+    component: openedx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lms-worker
+  template:
+    metadata:
+      labels:
+        app: lms-worker
+        component: openedx
+    spec:
+      serviceAccountName: openedx-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: lms-worker
+          image: openedx/lms:latest
+          command:
+            - celery
+            - --app=lms.celery:APP
+            - worker
+            - --loglevel=warning
+            - --hostname=lms.%%h
+            - --max-tasks-per-child=100
+            - --queues=lms.default,lms.high,lms.low
+
+          envFrom:
+            - configMapRef:
+                name: openedx-lms-config
+
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: password
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: host
+            - name: REDIS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-redis-secret
+                  key: REDIS_AUTH_TOKEN
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-django-secret
+                  key: secret-key
+
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+
+          livenessProbe:
+            exec:
+              command:
+                - celery
+                - --app=lms.celery:APP
+                - inspect
+                - ping
+                - -d
+                - lms@$HOSTNAME
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+
+          volumeMounts:
+            - name: secrets-store
+              mountPath: /mnt/secrets
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: openedx-aws-secrets
+        - name: tmp
+          emptyDir: {}

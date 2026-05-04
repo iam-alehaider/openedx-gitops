@@ -1,0 +1,119 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-default
+  namespace: openedx
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-lms-from-nginx
+  namespace: openedx
+spec:
+  podSelector:
+    matchLabels:
+      app: lms
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8000
+          protocol: TCP
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - ports:
+        - port: 3306
+          protocol: TCP
+        - port: 6379
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+        - port: 27017
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-cms-from-nginx
+  namespace: openedx
+spec:
+  podSelector:
+    matchLabels:
+      app: cms
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8000
+          protocol: TCP
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - ports:
+        - port: 3306
+          protocol: TCP
+        - port: 6379
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+        - port: 27017
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-workers-egress
+  namespace: openedx
+spec:
+  podSelector:
+    matchLabels:
+      component: openedx
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+        - port: 6379
+          protocol: TCP
+        - port: 3306
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring-scrape
+  namespace: openedx
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 8000
+          protocol: TCP
+        - port: 9100
+          protocol: TCP

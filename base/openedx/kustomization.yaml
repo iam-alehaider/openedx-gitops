@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - rbac.yaml
+  - configmap.yaml
+  - network-policies.yaml
+  - secret-provider-class.yaml
+  - persistent-volumes.yaml
+  - lms-deployment.yaml
+  - lms-service.yaml
+  - lms-hpa.yaml
+  - lms-pdb.yaml
+  - cms-deployment.yaml
+  - cms-service.yaml
+  - cms-hpa.yaml
+  - cms-pdb.yaml
+  - lms-worker-deployment.yaml
+  - cms-worker-deployment.yaml
+  - lms-worker-scaledobject.yaml
+  - cms-worker-scaledobject.yaml
+  - ingress-lms.yaml
+  - ingress-cms.yaml
+  - migrate-job.yaml

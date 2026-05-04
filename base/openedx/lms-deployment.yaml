@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lms
+  namespace: openedx
+  labels:
+    app: lms
+    component: openedx
+spec:
+  selector:
+    matchLabels:
+      app: lms
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: lms
+        component: openedx
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "8000"
+        prometheus.io/path:   "/metrics"
+    spec:
+      serviceAccountName: openedx-sa
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: lms
+          image: openedx/lms:latest
+          ports:
+            - containerPort: 8000
+              name: http
+
+          envFrom:
+            - configMapRef:
+                name: openedx-lms-config
+
+          env:
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: password
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-db-secret
+                  key: host
+            - name: REDIS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-redis-secret
+                  key: REDIS_AUTH_TOKEN
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openedx-django-secret
+                  key: secret-key
+
+          volumeMounts:
+            - name: secrets-store
+              mountPath: /mnt/secrets
+              readOnly: true
+            - name: media
+              mountPath: /openedx/media
+            - name: tmp
+              mountPath: /tmp
+
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "3Gi"
+
+          livenessProbe:
+            httpGet:
+              path: /heartbeat
+              port: 8000
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            failureThreshold: 5
+            timeoutSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /heartbeat
+              port: 8000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 5
+            timeoutSeconds: 5
+
+          startupProbe:
+            httpGet:
+              path: /heartbeat
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 10
+
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: openedx-aws-secrets
+        - name: media
+          persistentVolumeClaim:
+            claimName: openedx-media-pvc
+        - name: tmp
+          emptyDir: {}
+
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: lms
