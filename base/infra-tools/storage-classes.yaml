@@ -22,7 +22,7 @@ provisioner: efs.csi.aws.com
 parameters:
   provisioningMode: efs-ap
   # FILL THIS: terraform -chdir=infra/live/dev/platform output efs_file_system_id
-  fileSystemId: "FILL_FROM_TERRAFORM_OUTPUT"
+  fileSystemId: "fs-0c0c08cef2ee9f2e4"
   directoryPerms: "700"
   gidRangeStart: "1000"
   gidRangeEnd:   "2000"
