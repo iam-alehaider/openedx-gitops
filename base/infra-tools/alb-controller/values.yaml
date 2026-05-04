@@ -3,7 +3,7 @@
 clusterName: openedx-dev
 region: us-east-1
 # Run: terraform -chdir=infra/live/dev/networking output vpc_id
-vpcId: vpc-0a16e536c5c2447a5
+vpcId: vpc-012e65a407f76cb6d
 
 serviceAccount:
   create: true

@@ -32,7 +32,7 @@ configMapGenerator:
       - LMS_HOST=dev.learn.alecloud.site
       - CMS_HOST=dev.studio.alecloud.site
       - MYSQL_HOST=openedx-dev-mysql.cy7wawq8w9kw.us-east-1.rds.amazonaws.com
-      - REDIS_HOST=openedx-dev-mysql.cy7wawq8w9kw.us-east-1.rds.amazonaws.com
+      - REDIS_HOST=master.openedx-dev-redis.90x6ug.use1.cache.amazonaws.com
       - OPENEDX_LOG_LEVEL=DEBUG
   - name: openedx-cms-config
     namespace: openedx-dev
@@ -41,4 +41,4 @@ configMapGenerator:
       - LMS_HOST=dev.learn.alecloud.site
       - CMS_HOST=dev.studio.alecloud.site
       - MYSQL_HOST=openedx-dev-mysql.cy7wawq8w9kw.us-east-1.rds.amazonaws.com
-      - REDIS_HOST=openedx-dev-mysql.cy7wawq8w9kw.us-east-1.rds.amazonaws.com
+      - REDIS_HOST=master.openedx-dev-redis.90x6ug.use1.cache.amazonaws.com
