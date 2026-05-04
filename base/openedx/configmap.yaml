@@ -18,8 +18,8 @@ data:
   # Override per environment via kustomize configMapGenerator
   LMS_HOST: "learn.alecloud.site"
   CMS_HOST: "studio.alecloud.site"
-  MYSQL_HOST: "FILL_FROM_TERRAFORM_OUTPUT"
-  REDIS_HOST: "FILL_FROM_TERRAFORM_OUTPUT"
+  MYSQL_HOST: "openedx-dev-mysql.cy7wawq8w9kw.us-east-1.rds.amazonaws.com"
+  REDIS_HOST: "master.openedx-dev-redis.90x6ug.use1.cache.amazonaws.com"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -38,5 +38,5 @@ data:
   CSRF_COOKIE_SECURE:     "true"
   LMS_HOST: "learn.alecloud.site"
   CMS_HOST: "studio.alecloud.site"
-  MYSQL_HOST: "FILL_FROM_TERRAFORM_OUTPUT"
-  REDIS_HOST: "FILL_FROM_TERRAFORM_OUTPUT"
+  MYSQL_HOST: "openedx-dev-mysql.cy7wawq8w9kw.us-east-1.rds.amazonaws.com"
+  REDIS_HOST: "master.openedx-dev-redis.90x6ug.use1.cache.amazonaws.com"
