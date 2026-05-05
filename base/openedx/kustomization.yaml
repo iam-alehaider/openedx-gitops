@@ -20,7 +20,7 @@ resources:
   - lms-worker-deployment.yaml
   - cms-worker-deployment.yaml
   - lms-worker-scaledobject.yaml
-  - cms-worker-scaledobject.yaml
+    #  - cms-worker-scaledobject.yaml
   - ingress-lms.yaml
   - ingress-cms.yaml
   - migrate-job.yaml
